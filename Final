@@ -1,0 +1,79 @@
+# api 
+from asana import Client as AsanaClient
+
+from google.oauth2 import service_account
+
+from googleapiclient.discovery import build
+
+from flask import Flask, jsonify, request
+
+from trello import TrelloClient
+
+
+app.config.from_envvar('ENV_FILE_LOCATION')
+
+# asana api
+ASANA_ACCESS_TOKEN = app.config['aSANA_ACCESS_TOKEN']
+asana_client =AsanaClient.access_token(ASANA_ACCESS_TOKEN)
+
+
+# trello api
+TRELLO_API_KEY= app.config['TRELLO_API_KEY']
+TRELLO_API_SECRET = app.config['TRELLO_API_SECRET']
+TRELLO_TOKEN= app.config['TRELLO_TOKEN']
+TRELLO_TOKEN_SECRET = app.config['TRELLO_TOKEN_SECRET']
+trello_client= TrelloClient
+api_key=TRELLO_API_KEY,
+api_secret=TRELLO_API_SECRET(
+token=TRELLO_TOKEN,
+token_secret=TRELLO_TOKEN_SECRET
+)
+
+# google api
+GOOGLE_SERVICE_ACCOUNT_JSON = app.config['GOOGLE_SERVICE_ACCOUNT_JSON']
+credentials = service_account.Credentials.from_service_account_info(
+ GOOGLE_SERVICE_ACCOUNT_JSON,
+scopes=['https://www.googleapis.com/auth/calendar']
+)
+google_calendar = build('calendar', 'v3', credentials=credentials)
+
+# created endpoints for task set by the api
+# This is so the two apis can can connect to each other
+@app.route('/asana/tasks', methods=['POST'])
+def import_asana_tasks():
+    data = request.json
+    workspace_id = data['workspace_id']
+    asana_tasks = asana_client.tasks.find_all({
+ 'workspace': workspace_id,'completed_since': 'now'
+ 'opt_fields': 'name,completed,created_at,due_on,notes,assignee_status,projects,subtasks'
+    })
+    tasks =[]
+# different titles we can add to manage the app mbetter for asana
+    for task in asana_tasks:
+        task_data= {
+'id': task['gid'],'title': task['name'],'completed': task['completed'],
+'due_date': task['due_on'],'assignee_status': task['assignee_status'],
+'projects': [project['gid'] for project in task['projects']],'subtasks': [subtask['gid'] for subtask in task['subtasks']]
+        }
+    tasks.append(task_data)
+    return jsonify(tasks)
+
+# this is the trello side so you can put your two together
+
+@app.route('/trello/tasks', methods=['POST'])
+def import_trello_tasks():
+    data= request.json
+    board_id = data['board_id']
+    trello_board =trello_client.get_board(board_id)
+    trello_lists = trello_board.all_lists()
+    tasks =[]
+ for trello_list in trello_lists:
+        trello_cards = trello_list.list_cards()
+     for trello_card in trello_cards:
+         card_data = {
+ 'id': trello_card.id, 'title': trello_card.name, 'completed': trello_card.closed,
+ 'due_date': trello_card.due_date.isoformat()
+'list_id': trello_list.id
+            }
+     tasks.append(card_data)
+    return jsonify(carddata)
