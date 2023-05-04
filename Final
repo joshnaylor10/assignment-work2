@@ -17,6 +17,16 @@ ASANA_ACCESS_TOKEN = app.config['aSANA_ACCESS_TOKEN']
 asana_client =AsanaClient.access_token(ASANA_ACCESS_TOKEN)
 
 
+
+# google api
+GOOGLE_SERVICE_ACCOUNT_JSON = app.config['GOOGLE_SERVICE_ACCOUNT_JSON']
+credentials = service_account.Credentials.from_service_account_info(
+ GOOGLE_SERVICE_ACCOUNT_JSON,
+scopes=['https://www.googleapis.com/auth/calendar']
+)
+google_calendar = build('calendar', 'v3', credentials=credentials)
+
+
 # trello api
 TRELLO_API_KEY= app.config['TRELLO_API_KEY']
 TRELLO_API_SECRET = app.config['TRELLO_API_SECRET']
@@ -29,13 +39,15 @@ token=TRELLO_TOKEN,
 token_secret=TRELLO_TOKEN_SECRET
 )
 
-# google api
-GOOGLE_SERVICE_ACCOUNT_JSON = app.config['GOOGLE_SERVICE_ACCOUNT_JSON']
-credentials = service_account.Credentials.from_service_account_info(
- GOOGLE_SERVICE_ACCOUNT_JSON,
-scopes=['https://www.googleapis.com/auth/calendar']
-)
-google_calendar = build('calendar', 'v3', credentials=credentials)
+
+
+
+
+
+
+
+
+
 
 # created endpoints for task set by the api
 # This is so the two apis can can connect to each other
